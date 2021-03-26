@@ -3,8 +3,10 @@ var cvs, ctx;   // canvas object
 var mouse = {   // global mouse object
     x: 0,
     y: 0,
-
-    hold: false     // mouse down or not
+    hold: false,    // mouse down or not
+    
+    // used to change the globalCompasiteOperation of ctx (eraser now)
+    composite_op: "source-over"
 }
 
 /* draw functions */
@@ -29,8 +31,9 @@ function mouseMove (event){
 function mouseDown (event){
     mouse.x = event.offsetX;
     mouse.y = event.offsetY;
-
     mouse.hold = true;
+    ctx.globalCompositeOperation = mouse.composite_op;
+
     console.log(mouse); // check where's the mouse
 }
 function mouseUp (event){
@@ -52,4 +55,11 @@ window.onload = function (){
     cvs.addEventListener('mousemove', mouseMove, false);
     cvs.addEventListener('mousedown', mouseDown, false);
     cvs.addEventListener('mouseup'  , mouseUp  , false);
+
+    // Tool bar
+    let pencil = document.getElementById("pencil");
+    let eraser = document.getElementById("eraser");
+
+    pencil.addEventListener('mousedown', changeMouse('pencil'), false);
+    eraser.addEventListener('mousedown', changeMouse('eraser'), false);
 }
