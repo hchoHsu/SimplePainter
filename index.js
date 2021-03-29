@@ -6,10 +6,29 @@ var mouse = {   // global mouse object
     hold: false,    // mouse down or not
     
     // used to change the globalCompasiteOperation of ctx (eraser now)
+    pen_style: "pencil",
     composite_op: "source-over"
 }
 
 /* draw functions */
+function changeMouse (style){
+    if (style !== "eraser")
+
+        mouse.composite_op = "source-over";
+
+    switch (style) {
+        case 'pencil':
+            mouse.pen_style = "pencil";
+        break;
+        case 'eraser':
+            mouse.pen_style = "pencil";
+            mouse.composite_op = "destination-out"
+        break;
+    }
+
+    console.log("change to" + style);
+}
+
 function drawLine (x2, y2){
     ctx.beginPath();
     ctx.stroleStyle = 'black';
@@ -60,6 +79,8 @@ window.onload = function (){
     let pencil = document.getElementById("pencil");
     let eraser = document.getElementById("eraser");
 
-    pencil.addEventListener('mousedown', changeMouse('pencil'), false);
-    eraser.addEventListener('mousedown', changeMouse('eraser'), false);
+    pencil.addEventListener('click', function () {
+        changeMouse('pencil')}  , false);
+    eraser.addEventListener('click', function () {
+        changeMouse('eraser')}  , false);
 }
