@@ -11,6 +11,13 @@ var mouse = {   // global mouse object
 }
 
 /* draw functions */
+function change_color (color){
+
+}
+function change_size (size){
+    ctx.lineWidth = size;
+}
+
 function changeMouse (style){
     if (style !== "eraser")
 
@@ -31,8 +38,6 @@ function changeMouse (style){
 
 function drawLine (x2, y2){
     ctx.beginPath();
-    ctx.stroleStyle = 'black';
-    ctx.lineWidth = 1;
     ctx.moveTo(mouse.x, mouse.y);
     ctx.lineTo(x2, y2);
     ctx.stroke();
@@ -78,9 +83,19 @@ window.onload = function (){
     // Tool bar
     let pencil = document.getElementById("pencil");
     let eraser = document.getElementById("eraser");
-
     pencil.addEventListener('click', function () {
         changeMouse('pencil')}  , false);
     eraser.addEventListener('click', function () {
         changeMouse('eraser')}  , false);
+    
+    // Menu
+    let color_selc = document.getElementById("color_select");
+    let brush_size = document.getElementById("brush_size"); 
+    color_selc.addEventListener('change', function () {
+        ctx.strokeStyle = color_selc.value;
+    } , false);
+    brush_size.addEventListener('change', function () {
+        ctx.lineWidth = brush_size.value;
+        console.log(ctx.lineWidth);
+    }  , false);
 }
