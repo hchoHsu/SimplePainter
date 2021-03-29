@@ -20,12 +20,14 @@ function change_size (size){
 
 function changeMouse (style){
     if (style !== "eraser")
-
         mouse.composite_op = "source-over";
 
     switch (style) {
         case 'pencil':
             mouse.pen_style = "pencil";
+        break;
+        case 'text':
+            mouse.pen_style = "text";
         break;
         case 'eraser':
             mouse.pen_style = "pencil";
@@ -87,7 +89,16 @@ window.onload = function (){
         changeMouse('pencil')}  , false);
     eraser.addEventListener('click', function () {
         changeMouse('eraser')}  , false);
-    
+
+    // Text bar
+    let textInput = document.getElementById("textInput");
+    let fontSize  = document.getElementById("fontsize");
+    textInput.addEventListener('click', function () {
+        changeMouse('text')}  , false);
+    fontSize.addEventListener('change', function () {
+        ctx.font = fontSize.value;
+    } , false)
+
     // Menu
     let color_selc = document.getElementById("color_select");
     let brush_size = document.getElementById("brush_size"); 
@@ -97,5 +108,11 @@ window.onload = function (){
     brush_size.addEventListener('change', function () {
         ctx.lineWidth = brush_size.value;
         console.log(ctx.lineWidth);
+    }  , false);
+
+    // Refresh
+    let refresh = document.getElementById("refresh");
+    refresh.addEventListener('click', function () {
+        ctx.clearRect(0, 0, cvs.width, cvs.height);
     }  , false);
 }

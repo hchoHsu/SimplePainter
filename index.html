@@ -15,11 +15,20 @@
         </canvas>
     </div>
     <!--Tool Bar-->
-    <div>
-        <input type="color" id="color_select">
+    <div class="ToolBar">
+        <label>Color Select</label>
+        <input type="color" value="black" id="color_select">
+        <br>
+        <label>Brush Size</label>
         <input type="range" min="1" max="10" value="1" id="brush_size">
+        <br>
+        <button id="textInput">Text</button>
+        <input type="number" min="2" max="40" value="12" id="fontsize">
+        <br>
         <button id="pencil">Pencil</button>
         <button id="eraser">Eraser</button>
+        <br>
+        <button id="refresh">Refresh</button>
     </div>
 </body>
 </html>
