@@ -46,10 +46,21 @@ function drawLine (x2, y2){
     ctx.closePath();
 }
 
+function enterPress (){
+    // if enter is press, then drawText
+}
+function addInput (){
+    // if mouseUp, add Input element
+}
+function drawText (xt, yt){
+    // draw text on canvas
+}
+
 /* mouse function */
 function mouseMove (event){
     if (mouse.hold === true) {
-        drawLine(event.offsetX, event.offsetY);
+        if (mouse.pen_style != "text")
+            drawLine(event.offsetX, event.offsetY);
         mouse.x = event.offsetX;
         mouse.y = event.offsetY;
     }
@@ -64,7 +75,10 @@ function mouseDown (event){
 }
 function mouseUp (event){
     if (mouse.hold === true) {
-        drawLine(event.offsetX, event.offsetY);
+        if(mouse.pen_style == "text")
+            addInput();
+        else
+            drawLine(event.offsetX, event.offsetY);
         mouse.x = 0;
         mouse.y = 0;
         mouse.hold = false;
@@ -91,13 +105,14 @@ window.onload = function (){
         changeMouse('eraser')}  , false);
 
     // Text bar
-    let textInput = document.getElementById("textInput");
-    let fontSize  = document.getElementById("fontsize");
-    textInput.addEventListener('click', function () {
-        changeMouse('text')}  , false);
-    fontSize.addEventListener('change', function () {
-        ctx.font = fontSize.value;
-    } , false)
+    /* This part need more research, so I stop it now.*/
+    // let textInput = document.getElementById("textInput");
+    // let fontSize  = document.getElementById("fontsize");
+    // textInput.addEventListener('click', function () {
+    //     changeMouse('text')}  , false);
+    // fontSize.addEventListener('change', function () {
+    //     ctx.font = fontSize.value;
+    // } , false)
 
     // Menu
     let color_selc = document.getElementById("color_select");
