@@ -11,8 +11,10 @@ var mouse = {   // global mouse object
 
     // Test element
     font: 'sans-serif',
-    fontsize: '10px',
-    hasInput: false
+    fontsize: 10,
+    hasInput: false,
+    text_x: 0,
+    text_y: 0
 }
 
 /* draw functions */
@@ -62,7 +64,7 @@ function enterPress (event){
         mouse.hasInput = false;
     }
 }
-function addInput (x, y){
+function addInput (x, y, xf, yf){
     // if mouseUp, add Input element
     let input = document.createElement('input');
 
@@ -70,6 +72,7 @@ function addInput (x, y){
     input.style.position = 'fixed';
     input.style.left = (x - 4) + 'px';
     input.style.top  = (y - 4) + 'px';
+    input.style.fontSize = mouse.fontsize + 'px';
 
     input.onkeydown = enterPress;
 
@@ -79,11 +82,12 @@ function addInput (x, y){
     mouse.hasInput = true;
 }
 function drawText (txt, xt, yt){
+    ctx.font = mouse.fontsize + 'px ' + mouse.font;
     // draw text on canvas
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';
     // ctx.font = font; // let user able to add text font and size
-    ctx.fillText(txt, xt - 4, yt - 4);
+    ctx.fillText(txt, mouse.text_x - 4, mouse.text_y - 4);
 }
 
 /* mouse function */
@@ -108,6 +112,8 @@ function mouseUp (event){
         if(!mouse.hasInput && mouse.pen_style == "text"){
             // To understand the diff between clienX and pageX and offsetX:
             // https://kknews.cc/zh-tw/news/r3pzzr.html
+            mouse.text_x = event.offsetX;
+            mouse.text_y = event.offsetY;
             addInput(event.clientX, event.clientY);
         }
         else
@@ -158,7 +164,6 @@ window.onload = function (){
     } , false);
     brush_size.addEventListener('change', function () {
         ctx.lineWidth = brush_size.value;
-        console.log(ctx.lineWidth);
     }  , false);
 
     // Refresh
