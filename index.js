@@ -7,7 +7,12 @@ var mouse = {   // global mouse object
     
     // used to change the globalCompasiteOperation of ctx (eraser now)
     pen_style: "pencil",
-    composite_op: "source-over"
+    composite_op: "source-over",
+
+    // Test element
+    font: 'sans-serif',
+    fontsize: '10px',
+    hasInput: false
 }
 
 /* draw functions */
@@ -46,14 +51,39 @@ function drawLine (x2, y2){
     ctx.closePath();
 }
 
-function enterPress (){
+// reference: https://stackoverflow.com/questions/21011931/how-to-embed-an-input-or-textarea-in-a-canvas-element
+function enterPress (event){
     // if enter is press, then drawText
+    let keyCode = event.keyCode;
+    if(keyCode === 13){
+        drawText(this.value, parseInt(this.style.left, 10), parseInt(this.style.top, 10));
+        document.body.removeChild(this);
+
+        mouse.hasInput = false;
+    }
 }
-function addInput (){
+function addInput (x, y){
     // if mouseUp, add Input element
+    let input = document.createElement('input');
+
+    input.type = 'text';
+    input.style.position = 'fixed';
+    input.style.left = (x - 4) + 'px';
+    input.style.top  = (y - 4) + 'px';
+
+    input.onkeydown = enterPress;
+
+    document.body.appendChild(input);
+    input.focus();
+
+    mouse.hasInput = true;
 }
-function drawText (xt, yt){
+function drawText (txt, xt, yt){
     // draw text on canvas
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+    // ctx.font = font; // let user able to add text font and size
+    ctx.fillText(txt, xt - 4, yt - 4);
 }
 
 /* mouse function */
@@ -75,8 +105,11 @@ function mouseDown (event){
 }
 function mouseUp (event){
     if (mouse.hold === true) {
-        if(mouse.pen_style == "text")
-            addInput();
+        if(!mouse.hasInput && mouse.pen_style == "text"){
+            // To understand the diff between clienX and pageX and offsetX:
+            // https://kknews.cc/zh-tw/news/r3pzzr.html
+            addInput(event.clientX, event.clientY);
+        }
         else
             drawLine(event.offsetX, event.offsetY);
         mouse.x = 0;
@@ -105,14 +138,17 @@ window.onload = function (){
         changeMouse('eraser')}  , false);
 
     // Text bar
-    /* This part need more research, so I stop it now.*/
-    // let textInput = document.getElementById("textInput");
-    // let fontSize  = document.getElementById("fontsize");
-    // textInput.addEventListener('click', function () {
-    //     changeMouse('text')}  , false);
-    // fontSize.addEventListener('change', function () {
-    //     ctx.font = fontSize.value;
-    // } , false)
+    let textInput = document.getElementById("textInput");
+    let fontType = document.getElementById("fontType");
+    let fontSize  = document.getElementById("fontsize");
+    textInput.addEventListener('click', function () {
+        changeMouse('text')}  , false);
+    fontType.addEventListener('change', function () {
+        mouse.font = fontType.options[fontType.selectedIndex].value;
+    } , false);
+    fontSize.addEventListener('change', function () {
+        mouse.fontsize = fontSize.value;
+    } , false);
 
     // Menu
     let color_selc = document.getElementById("color_select");

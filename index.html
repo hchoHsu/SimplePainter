@@ -16,15 +16,28 @@
     </div>
     <!--Tool Bar-->
     <div class="ToolBar">
+        <!--Color and Size-->
         <label>Color Select</label>
         <input type="color" value="black" id="color_select">
         <br>
         <label>Brush Size</label>
         <input type="range" min="1" max="10" value="1" id="brush_size">
         <br>
-        <button id="textInput">Text</button>
+        
+        <!--Text Element-->
+        <button id="textInput">Text</button>    <br>
+        <label>Fontsize</label>
         <input type="number" min="2" max="40" value="12" id="fontsize">
         <br>
+        <select id="fontType">
+            <option value="sans-serif">sans-serif</option>
+            <option value="serif"     >serif</option>
+            <option value="monospace" >monospace</option>
+            <option value="cursive"   >cursive</option>
+            <option value="fantasy"   >fantasy</option>
+        </select>
+
+        <!--Menu-->
         <button id="pencil">Pencil</button>
         <button id="eraser">Eraser</button>
         <br>
