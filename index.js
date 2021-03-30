@@ -166,9 +166,13 @@ window.onload = function (){
         ctx.lineWidth = brush_size.value;
     }  , false);
 
+    // Cursor style
+    // reference: https://stackoverflow.com/questions/4564251/change-the-mouse-pointer-using-javascript
+
     // Refresh
     let refresh = document.getElementById("refresh");
     refresh.addEventListener('click', function () {
-        ctx.clearRect(0, 0, cvs.width, cvs.height);
+        if (confirm('Are you sure you want to refresh'))
+            ctx.clearRect(0, 0, cvs.width, cvs.height);
     }  , false);
 }
