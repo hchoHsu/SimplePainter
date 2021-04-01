@@ -32,7 +32,7 @@ function changeMouse (style){
     switch (style) {
         case 'pencil':
             mouse.pen_style = "pencil";
-            cvs.style.cursor = "url('img/pen.png'), auto";
+            cvs.style.cursor = "url('img/pencil.cur'), auto";
         break;
         case 'text':
             mouse.pen_style = "text";
@@ -41,7 +41,7 @@ function changeMouse (style){
         case 'eraser':
             mouse.pen_style = "pencil";
             mouse.composite_op = "destination-out"
-            cvs.style.cursor = "url('img/eraser.png'), auto";
+            cvs.style.cursor = "url('img/eraser.cur'), auto";
         break;
     }
 
