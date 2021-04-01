@@ -3,6 +3,8 @@ var cvs, ctx;   // canvas object
 var mouse = {   // global mouse object
     x: 0,
     y: 0,
+    down_x: 0,
+    down_y: 0,
     hold: false,    // mouse down or not
     
     // used to change the globalCompasiteOperation of ctx (eraser now)
@@ -18,13 +20,6 @@ var mouse = {   // global mouse object
 }
 
 /* draw functions */
-function change_color (color){
-
-}
-function change_size (size){
-    ctx.lineWidth = size;
-}
-
 function changeMouse (style){
     if (style !== "eraser")
         mouse.composite_op = "source-over";
@@ -33,6 +28,10 @@ function changeMouse (style){
         case 'pencil':
             mouse.pen_style = "pencil";
             cvs.style.cursor = "url('img/pencil.cur'), auto";
+        break;
+        case 'rect_s':
+            mouse.pen_style = "rect_s";
+            // TODO: add new cursor .png
         break;
         case 'text':
             mouse.pen_style = "text";
@@ -55,6 +54,10 @@ function drawLine (x2, y2){
     ctx.stroke();
     ctx.closePath();
 }
+// function drawRect (xf, yf){
+    // ctx.strokeRect(mouse.down_x, mouse.down_y,
+                //    mosue.down_x - xf, mouse.down_y - yf);
+// }
 
 // reference: https://stackoverflow.com/questions/21011931/how-to-embed-an-input-or-textarea-in-a-canvas-element
 function enterPress (event){
@@ -96,15 +99,23 @@ function drawText (txt, xt, yt){
 /* mouse function */
 function mouseMove (event){
     if (mouse.hold === true) {
-        if (mouse.pen_style != "text")
-            drawLine(event.offsetX, event.offsetY);
+        switch (mouse.pen_style) {
+            case 'rect_s':
+                // drawRect(event.offsetX, event.offsetY);
+            break;
+            case 'pencil':
+            case 'eraser':
+                drawLine(event.offsetX, event.offsetY);
+            break;
+        }
         mouse.x = event.offsetX;
         mouse.y = event.offsetY;
     }
 }
 function mouseDown (event){
-    mouse.x = event.offsetX;
-    mouse.y = event.offsetY;
+    mouse.down_x = mouse.x = event.offsetX;
+    mouse.down_y = mouse.y = event.offsetY;
+    
     mouse.hold = true;
     ctx.globalCompositeOperation = mouse.composite_op;
 
@@ -121,8 +132,8 @@ function mouseUp (event){
         }
         else
             drawLine(event.offsetX, event.offsetY);
-        mouse.x = 0;
-        mouse.y = 0;
+        mouse.down_x = mouse.x = 0;
+        mouse.down_y = mouse.y = 0;
         mouse.hold = false;
     }
     console.log(mouse); // check where's the mouse
@@ -141,10 +152,14 @@ window.onload = function (){
     // Tool bar
     let pencil = document.getElementById("pencil");
     let eraser = document.getElementById("eraser");
+    let rect_s = document.getElementById("rectangle");
+    // let circ_s = document.getElementById("circle");
     pencil.addEventListener('click', function () {
         changeMouse('pencil')}  , false);
     eraser.addEventListener('click', function () {
         changeMouse('eraser')}  , false);
+    rect_s.addEventListener('click', function () {
+        changeMouse('rect_s')}  , false);
 
     // Text bar
     let textInput = document.getElementById("textInput");
@@ -179,3 +194,5 @@ window.onload = function (){
             ctx.clearRect(0, 0, cvs.width, cvs.height);
     }  , false);
 }
+
+// https://www.youtube.com/watch?v=6arkndScw7A
