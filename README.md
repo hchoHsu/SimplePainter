@@ -8,3 +8,7 @@ Down below is an overview of this code.
 ## CSS design
 
 ## JS function
+
+
+## Problems Figuring now:
++ Draw a shape without rerendering the whole canvas(If needed, reconstruct the whole code structure)
