@@ -1,5 +1,6 @@
 /* main variable */
 var cvs, ctx;   // canvas object
+var execution_array = [];
 var mouse = {   // global mouse object
     x: 0,
     y: 0,
@@ -58,6 +59,22 @@ function drawLine (x2, y2){
     // ctx.strokeRect(mouse.down_x, mouse.down_y,
                 //    mosue.down_x - xf, mouse.down_y - yf);
 // }
+
+// Image function
+function upload_img(input){
+    let file = input.files[0];
+    let img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = function () {
+        ctx.drawImage(this, 0, 0, cvs.width, cvs.height);
+    };
+}
+function download_img(){
+    let link = document.getElementById("download_link");
+    link.download = "img.jpg";
+    link.href = cvs.toDataURL("image/jpeg");
+    link.click();
+}
 
 // reference: https://stackoverflow.com/questions/21011931/how-to-embed-an-input-or-textarea-in-a-canvas-element
 function enterPress (event){
@@ -160,6 +177,16 @@ window.onload = function (){
         changeMouse('eraser')}  , false);
     rect_s.addEventListener('click', function () {
         changeMouse('rect_s')}  , false);
+
+    // Image
+    let Image = document.getElementById("Upload");
+    let Download = document.getElementById("download");
+    Image.addEventListener('change', function () {
+        upload_img(this);
+    }, false);
+    Download.addEventListener('click', function () {
+        download_img();
+    }, false);
 
     // Text bar
     let textInput = document.getElementById("textInput");
