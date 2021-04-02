@@ -10,5 +10,5 @@ Down below is an overview of this code.
 ## JS function
 
 
-## Problems Figuring now:
-+ Draw a shape without rerendering the whole canvas(If needed, reconstruct the whole code structure)
+## Record：
+2021/04/02 To Achive the undo, redo function, I'm gonna change the whole structure of code.
