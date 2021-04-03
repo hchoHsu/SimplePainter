@@ -1,66 +1,148 @@
-/* main variable */
-var cvs, ctx;   // canvas object
+/* Main Global Variables */
+var cvs, ctx;
 var execution_array = [];
-var mouse = {   // global mouse object
-    x: 0,
-    y: 0,
-    down_x: 0,
-    down_y: 0,
-    hold: false,    // mouse down or not
-    
-    // used to change the globalCompasiteOperation of ctx (eraser now)
-    pen_style: "pencil",
-    composite_op: "source-over",
 
-    // Test element
-    font: 'sans-serif',
-    fontsize: 10,
-    hasInput: false,
-    text_x: 0,
-    text_y: 0
+var mouse = {
+    property: 'pencil',
+    position_down: [0, 0],
+    position_now:  [0, 0],
+    position_up:   [0, 0],
+
+    isHolding: false,
+    isTyping : false
 }
 
-/* draw functions */
-function changeMouse (style){
-    if (style !== "eraser")
-        mouse.composite_op = "source-over";
-
-    switch (style) {
+/* Functions */
+// Redrawing Array Functions
+function createElement(property, cur_x, cur_y){
+    switch (property){
         case 'pencil':
-            mouse.pen_style = "pencil";
-            cvs.style.cursor = "url('img/pencil.cur'), auto";
-        break;
-        case 'rect_s':
-            mouse.pen_style = "rect_s";
-            // TODO: add new cursor .png
-        break;
-        case 'text':
-            mouse.pen_style = "text";
-            cvs.style.cursor = "text"
-        break;
+            return {
+                property: 'pencil',
+                position_now: mouse.position_now,
+                position_nxt: [cur_x, cur_y],
+                strokeStyle : ctx.strokeStyle,
+                lineWidth   : ctx.lineWidth
+            }
         case 'eraser':
-            mouse.pen_style = "pencil";
-            mouse.composite_op = "destination-out"
-            cvs.style.cursor = "url('img/eraser.cur'), auto";
-        break;
+            return {
+                property: 'eraser',
+                position_now: mouse.position_now,
+                position_nxt: [cur_x, cur_y],
+                strokeStyle : ctx.strokeStyle,
+                lineWidth   : ctx.lineWidth
+            }
+        case 'text':
+            return {
+                property: 'text',
+                position_up: mouse.position_up,
+                font : ctx.font,
+                fillText : cur_x,
+            }
+        case 'image':
+            return {
+                property: 'image',
+                file: cur_x
+            }
     }
-
-    console.log("change to" + style);
 }
+function canvas_push(property, cur_x, cur_y){
+    let new_element = createElement(property, cur_x, cur_y);
+    execution_array.push(new_element);
+}
+function canvas_redraw(){
+    // TODO: redraw the whole map
+    let len = execution_array.length;
+    if(len < 1) return;
 
-function drawLine (x2, y2){
+    for(let idx = 0; idx < len; idx++){
+        let cur = execution_array[idx];
+        switch(cur.property)
+        {
+            case 'pencil':
+                ctx.strokeStyle = cur.strokeStyle;
+                ctx.lineWidth   = cur.lineWidth;
+                ctx.beginPath();
+                ctx.moveTo(cur.position_now[0], cur.position_now[1]);
+                ctx.lineTo(cur.position_nxt[0], cur.position_nxt[1]);
+                ctx.stroke();
+                ctx.closePath();
+            break;
+            case 'eraser':
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.strokeStyle = cur.strokeStyle;
+                ctx.lineWidth   = cur.lineWidth;
+                ctx.beginPath();
+                ctx.moveTo(cur.position_now[0], cur.position_now[1]);
+                ctx.lineTo(cur.position_nxt[0], cur.position_nxt[1]);
+                ctx.stroke();
+                ctx.closePath();
+                ctx.globalCompositeOperation = 'source-over';
+            break;
+            case 'text':
+                ctx.font = cur.font;
+                ctx.textBaseline = 'top';
+                ctx.textAlign = 'left';
+                ctx.fillText(cur.fillText, cur.position_up[0] - 4, cur.position_up[1] - 4);
+            break;
+            case 'image':
+                // TODO:
+                // The for loop will continue before the image loaded.
+                // Fix the problem here.
+                let img = new Image();
+                img.src = URL.createObjectURL(cur.file);
+                img.onload = function () {
+                    ctx.drawImage(this, 0, 0, cvs.width, cvs.height);
+                };
+            break;
+        }
+    }
+}
+// drawer
+function drawLine(cur_x, cur_y){
+    ctx.strokeStyle = document.getElementById("color_select").value;
+    ctx.lineWidth   = document.getElementById("brush_size").value;
+    
     ctx.beginPath();
-    ctx.moveTo(mouse.x, mouse.y);
-    ctx.lineTo(x2, y2);
+    ctx.moveTo(mouse.position_now[0], mouse.position_now[1]);
+    ctx.lineTo(cur_x, cur_y);
     ctx.stroke();
     ctx.closePath();
-}
-// function drawRect (xf, yf){
-    // ctx.strokeRect(mouse.down_x, mouse.down_y,
-                //    mosue.down_x - xf, mouse.down_y - yf);
-// }
 
-// Image function
+    canvas_push(mouse.property, cur_x, cur_y);
+}
+function drawText(txt, fontSize, fontFamily){
+    ctx.font = fontSize + ' ' + fontFamily;
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+    ctx.fillText(txt, mouse.position_up[0] - 4, mouse.position_up[1] - 4);
+
+    canvas_push('text', txt, 0);
+}
+function enterPress (event){
+    let keyCode = event.keyCode;
+    if(keyCode === 13){
+        drawText(this.value, this.style.fontSize, this.style.fontFamily);
+        document.body.removeChild(this);
+        mouse.isTyping = false;
+    }
+}
+function addInput(cur_x, cur_y){
+    let input = document.createElement('input');
+
+    input.type = 'text';
+    input.style.position = 'fixed';
+    input.style.left = (cur_x - 4) + 'px';
+    input.style.top  = (cur_y - 4) + 'px';
+    input.style.fontSize   = document.getElementById("fontsize").value + 'px';
+    input.style.fontFamily = document.getElementById("fontType").options[document.getElementById("fontType").selectedIndex].value;
+    input.onkeydown = enterPress;
+
+    document.body.appendChild(input);
+    input.focus();
+    mouse.isTyping = true;
+}
+// image control
 function upload_img(input){
     let file = input.files[0];
     let img = new Image();
@@ -68,6 +150,8 @@ function upload_img(input){
     img.onload = function () {
         ctx.drawImage(this, 0, 0, cvs.width, cvs.height);
     };
+    
+    canvas_push('image', file, 0);
 }
 function download_img(){
     let link = document.getElementById("download_link");
@@ -75,89 +159,78 @@ function download_img(){
     link.href = cvs.toDataURL("image/jpeg");
     link.click();
 }
+// selector
+function changeMouse (property){
+    if(mouse.isTyping)
+        property = 'text';
 
-// reference: https://stackoverflow.com/questions/21011931/how-to-embed-an-input-or-textarea-in-a-canvas-element
-function enterPress (event){
-    // if enter is press, then drawText
-    let keyCode = event.keyCode;
-    if(keyCode === 13){
-        drawText(this.value, parseInt(this.style.left, 10), parseInt(this.style.top, 10));
-        document.body.removeChild(this);
-
-        mouse.hasInput = false;
+    switch (property){
+        case 'pencil':
+            mouse.property = "pencil";
+            cvs.style.cursor = "url('img/pencil.cur'), auto";
+        break;
+        case 'eraser':
+            mouse.property = "eraser";
+            cvs.style.cursor = "url('img/eraser.cur'), auto";
+        break;
+        case 'text':
+            mouse.property = "text";
+            cvs.style.cursor = "text"
+        break;
+    }
+    console.log("mouse's property: " + mouse.property);
+}
+function callMouseFunction (cur_x, cur_y){
+    switch (mouse.property){
+        case 'pencil':
+            drawLine(cur_x, cur_y);
+        break;
+        case 'eraser':
+            ctx.globalCompositeOperation = 'destination-out';
+            drawLine(cur_x, cur_y);
+            ctx.globalCompositeOperation = 'source-over';
+        break;
+        case 'text':
+            // Will be called after the mouse is released
+            if(!mouse.isHolding && !mouse.isTyping) addInput(cur_x, cur_y);
+        break;
     }
 }
-function addInput (x, y, xf, yf){
-    // if mouseUp, add Input element
-    let input = document.createElement('input');
+// mouse action
+function mouseDown(event){
+    if(mouse.isTyping) return;
 
-    input.type = 'text';
-    input.style.position = 'fixed';
-    input.style.left = (x - 4) + 'px';
-    input.style.top  = (y - 4) + 'px';
-    input.style.fontSize = mouse.fontsize + 'px';
-
-    input.onkeydown = enterPress;
-
-    document.body.appendChild(input);
-    input.focus();
-
-    mouse.hasInput = true;
+    mouse.position_down = [event.offsetX, event.offsetY];
+    mouse.position_now  = [event.offsetX, event.offsetY];
+    mouse.isHolding = true;
 }
-function drawText (txt, xt, yt){
-    ctx.font = mouse.fontsize + 'px ' + mouse.font;
-    // draw text on canvas
-    ctx.textBaseline = 'top';
-    ctx.textAlign = 'left';
-    // ctx.font = font; // let user able to add text font and size
-    ctx.fillText(txt, mouse.text_x - 4, mouse.text_y - 4);
-}
+function mouseMove(event){
+    if(!mouse.isHolding || mouse.isTyping) return;
 
-/* mouse function */
-function mouseMove (event){
-    if (mouse.hold === true) {
-        switch (mouse.pen_style) {
-            case 'rect_s':
-                // drawRect(event.offsetX, event.offsetY);
-            break;
-            case 'pencil':
-            case 'eraser':
-                drawLine(event.offsetX, event.offsetY);
-            break;
-        }
-        mouse.x = event.offsetX;
-        mouse.y = event.offsetY;
-    }
-}
-function mouseDown (event){
-    mouse.down_x = mouse.x = event.offsetX;
-    mouse.down_y = mouse.y = event.offsetY;
-    
-    mouse.hold = true;
-    ctx.globalCompositeOperation = mouse.composite_op;
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+    canvas_redraw();
 
-    console.log(mouse); // check where's the mouse
+    // before(position_now) & now(event.offset)
+    callMouseFunction(event.offsetX, event.offsetY);
+    mouse.position_now = [event.offsetX, event.offsetY];
 }
-function mouseUp (event){
-    if (mouse.hold === true) {
-        if(!mouse.hasInput && mouse.pen_style == "text"){
-            // To understand the diff between clienX and pageX and offsetX:
-            // https://kknews.cc/zh-tw/news/r3pzzr.html
-            mouse.text_x = event.offsetX;
-            mouse.text_y = event.offsetY;
-            addInput(event.clientX, event.clientY);
-        }
-        else
-            drawLine(event.offsetX, event.offsetY);
-        mouse.down_x = mouse.x = 0;
-        mouse.down_y = mouse.y = 0;
-        mouse.hold = false;
-    }
-    console.log(mouse); // check where's the mouse
+function mouseUp(event){
+    if(!mouse.isHolding || mouse.isTyping) return;
+
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+    canvas_redraw();
+
+    mouse.isHolding = false;
+    mouse.position_up = [event.offsetX, event.offsetY];
+    // before(position_now) & now(event.offset)
+    if(mouse.property == "text")
+        callMouseFunction(event.clientX, event.clientY);
+    else
+        callMouseFunction(event.offsetX, event.offsetY);
 }
 
-/* main function */
-window.onload = function (){
+window.onload = function ()
+{
     cvs = document.getElementById("canvas");
     ctx = cvs.getContext("2d");
 
@@ -166,53 +239,19 @@ window.onload = function (){
     cvs.addEventListener('mousedown', mouseDown, false);
     cvs.addEventListener('mouseup'  , mouseUp  , false);
 
-    // Tool bar
-    let pencil = document.getElementById("pencil");
-    let eraser = document.getElementById("eraser");
-    let rect_s = document.getElementById("rectangle");
-    // let circ_s = document.getElementById("circle");
-    pencil.addEventListener('click', function () {
+    // Mouse Style
+    document.getElementById("pencil").addEventListener('click', function () {
         changeMouse('pencil')}  , false);
-    eraser.addEventListener('click', function () {
+    document.getElementById("eraser").addEventListener('click', function () {
         changeMouse('eraser')}  , false);
-    rect_s.addEventListener('click', function () {
-        changeMouse('rect_s')}  , false);
-
-    // Image
-    let Image = document.getElementById("Upload");
-    let Download = document.getElementById("download");
-    Image.addEventListener('change', function () {
-        upload_img(this);
-    }, false);
-    Download.addEventListener('click', function () {
-        download_img();
-    }, false);
-
-    // Text bar
-    let textInput = document.getElementById("textInput");
-    let fontType = document.getElementById("fontType");
-    let fontSize  = document.getElementById("fontsize");
-    textInput.addEventListener('click', function () {
-        changeMouse('text')}  , false);
-    fontType.addEventListener('change', function () {
-        mouse.font = fontType.options[fontType.selectedIndex].value;
-    } , false);
-    fontSize.addEventListener('change', function () {
-        mouse.fontsize = fontSize.value;
-    } , false);
-
-    // Menu
-    let color_selc = document.getElementById("color_select");
-    let brush_size = document.getElementById("brush_size"); 
-    color_selc.addEventListener('change', function () {
-        ctx.strokeStyle = color_selc.value;
-    } , false);
-    brush_size.addEventListener('change', function () {
-        ctx.lineWidth = brush_size.value;
-    }  , false);
-
-    // Cursor style
-    // reference: https://stackoverflow.com/questions/4564251/change-the-mouse-pointer-using-javascript
+    document.getElementById("textInput").addEventListener('click', function () {
+        changeMouse('text')}    , false);
+    
+    // Image Up/Down load
+    document.getElementById("Upload").addEventListener('change', function () {
+        upload_img(this)}       , false);
+    document.getElementById("download").addEventListener('click', function () {
+        download_img()}         , false);
 
     // Refresh
     let refresh = document.getElementById("refresh");
@@ -221,5 +260,3 @@ window.onload = function (){
             ctx.clearRect(0, 0, cvs.width, cvs.height);
     }  , false);
 }
-
-// https://www.youtube.com/watch?v=6arkndScw7A
