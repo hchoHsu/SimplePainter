@@ -11,4 +11,30 @@ Down below is an overview of this code.
 
 
 ## Problems Figuring now:
-+ Draw a shape without rerendering the whole canvas(If needed, reconstruct the whole code structure)
+### Undo Redo:
+
+for every mouse movement:
+    clearRect
+    Redraw
+    Put the current element onto canvas
+    Push the current element into array
+
+Push element into array:
+    basic component: {
+        property:       ,
+        start_position: ,   (x, y)
+        end_position:   ,   (x, y) or (width, height)
+        others:
+    }
+
+Redraw:
+    check every element property
+        if pencil:
+            set brush size / color
+            drawline();
+        if eraser:
+            set brush size / globalCompositeOperation
+            drawline();
+        if text:
+            set font size / style / text
+            drawText();

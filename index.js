@@ -6,6 +6,8 @@ var mouse = {   // global mouse object
     y: 0,
     down_x: 0,
     down_y: 0,
+    color: '#000000',
+    Brushsize: 1,
     hold: false,    // mouse down or not
     
     // used to change the globalCompasiteOperation of ctx (eraser now)
@@ -15,6 +17,7 @@ var mouse = {   // global mouse object
     // Test element
     font: 'sans-serif',
     fontsize: 10,
+    textInput: '',
     hasInput: false,
     text_x: 0,
     text_y: 0
@@ -39,7 +42,7 @@ function changeMouse (style){
             cvs.style.cursor = "text"
         break;
         case 'eraser':
-            mouse.pen_style = "pencil";
+            mouse.pen_style = "eraser";
             mouse.composite_op = "destination-out"
             cvs.style.cursor = "url('img/eraser.cur'), auto";
         break;
@@ -49,16 +52,104 @@ function changeMouse (style){
 }
 
 function drawLine (x2, y2){
+    ctx.strokeStyle = document.getElementById("color_select").value;
+    ctx.lineWidth = document.getElementById("brush_size").value;
+    ctx.globalCompositeOperation = mouse.composite_op;
     ctx.beginPath();
     ctx.moveTo(mouse.x, mouse.y);
     ctx.lineTo(x2, y2);
     ctx.stroke();
     ctx.closePath();
 }
-// function drawRect (xf, yf){
-    // ctx.strokeRect(mouse.down_x, mouse.down_y,
-                //    mosue.down_x - xf, mouse.down_y - yf);
-// }
+
+/* Redraw and Push */
+function createElement(x, y)
+{
+    if(x == "Image"){
+        return {
+            property: 'image',
+            input: y
+        }
+    }
+
+    switch(mouse.pen_style)
+    {
+        case 'pencil':
+            return {
+                property: 'pencil',
+                start_position_x: mouse.x,
+                start_position_y: mouse.y,
+                end_position_x: x,
+                end_position_y: y,
+                size: ctx.lineWidth,
+                color: ctx.strokeStyle
+            }
+        case 'eraser':
+            return {
+                property: 'eraser',
+                start_position_x: mouse.x,
+                start_position_y: mouse.y,
+                end_position_x: x,
+                end_position_y: y,
+                size: ctx.lineWidth
+            }
+        case 'text':
+            return {
+                property: 'text',
+                start_position_x: mouse.text_x,
+                start_position_y: mouse.text_y,
+                textInput: mouse.textInput,
+                textSize: mouse.fontsize,
+                textStyle: mouse.font
+            }
+    }
+}
+function PushIntoArray(x, y){
+    let elt = createElement(x, y);
+    execution_array.push(elt);
+}
+function Redraw(){
+    if(execution_array.length < 1) return;
+
+    execution_array.forEach(obj => {
+        switch(obj.property)
+        {
+            case 'pencil':
+                ctx.strokeStyle = obj.color;
+                ctx.lineWidth = obj.size;
+                ctx.beginPath();
+                ctx.moveTo(obj.start_position_x, obj.start_position_y);
+                ctx.lineTo(obj.end_position_x, obj.end_position_y);
+                ctx.stroke();
+                ctx.closePath();
+            break;
+            case 'eraser':
+                ctx.lineWidth = obj.size;
+                ctx.globalCompositeOperation = "destination-out";
+                ctx.beginPath();
+                ctx.moveTo(obj.start_position_x, obj.start_position_y);
+                ctx.lineTo(obj.end_position_x, obj.end_position_y);
+                ctx.stroke();
+                ctx.closePath();
+                ctx.globalCompositeOperation = "source-over";
+            break;
+            case 'text':
+                ctx.font = obj.textSize + 'px' + obj.textStyle;
+                ctx.textBaseline = 'top';
+                ctx.textAlign = 'left';
+                ctx.fillText(obj.textInput, obj.start_position_x - 4, obj.start_position_y - 4);
+            break;
+            case 'image':
+                let file = obj.input.files[0];
+                let img = new Image();
+                img.src = URL.createObjectURL(file);
+                img.onload = function () {
+                    ctx.drawImage(this, 0, 0, cvs.width, cvs.height);
+                };
+            break;
+        }
+    });
+}
 
 // Image function
 function upload_img(input){
@@ -68,6 +159,8 @@ function upload_img(input){
     img.onload = function () {
         ctx.drawImage(this, 0, 0, cvs.width, cvs.height);
     };
+    PushIntoArray("Image", input);
+    console.log("draw Image");
 }
 function download_img(){
     let link = document.getElementById("download_link");
@@ -84,6 +177,7 @@ function enterPress (event){
         drawText(this.value, parseInt(this.style.left, 10), parseInt(this.style.top, 10));
         document.body.removeChild(this);
 
+        PushIntoArray(0, 0);
         mouse.hasInput = false;
     }
 }
@@ -105,6 +199,7 @@ function addInput (x, y, xf, yf){
     mouse.hasInput = true;
 }
 function drawText (txt, xt, yt){
+    mouse.textInput = txt;
     ctx.font = mouse.fontsize + 'px ' + mouse.font;
     // draw text on canvas
     ctx.textBaseline = 'top';
@@ -114,22 +209,10 @@ function drawText (txt, xt, yt){
 }
 
 /* mouse function */
-function mouseMove (event){
-    if (mouse.hold === true) {
-        switch (mouse.pen_style) {
-            case 'rect_s':
-                // drawRect(event.offsetX, event.offsetY);
-            break;
-            case 'pencil':
-            case 'eraser':
-                drawLine(event.offsetX, event.offsetY);
-            break;
-        }
-        mouse.x = event.offsetX;
-        mouse.y = event.offsetY;
-    }
-}
 function mouseDown (event){
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+    Redraw();
+
     mouse.down_x = mouse.x = event.offsetX;
     mouse.down_y = mouse.y = event.offsetY;
     
@@ -138,8 +221,28 @@ function mouseDown (event){
 
     console.log(mouse); // check where's the mouse
 }
+function mouseMove (event){
+    if (mouse.hold === true) {
+        ctx.clearRect(0, 0, cvs.width, cvs.height);
+        Redraw();
+
+        ctx.globalCompositeOperation = mouse.composite_op;
+        switch (mouse.pen_style) {
+            case 'pencil':
+            case 'eraser':
+                drawLine(event.offsetX, event.offsetY);
+            break;
+        }
+        PushIntoArray(event.offsetX, event.offsetY);
+        mouse.x = event.offsetX;
+        mouse.y = event.offsetY;
+    }
+}
 function mouseUp (event){
     if (mouse.hold === true) {
+        ctx.clearRect(0, 0, cvs.width, cvs.height);
+        Redraw();
+
         if(!mouse.hasInput && mouse.pen_style == "text"){
             // To understand the diff between clienX and pageX and offsetX:
             // https://kknews.cc/zh-tw/news/r3pzzr.html
@@ -147,8 +250,10 @@ function mouseUp (event){
             mouse.text_y = event.offsetY;
             addInput(event.clientX, event.clientY);
         }
-        else
+        else{
             drawLine(event.offsetX, event.offsetY);
+            PushIntoArray(event.offsetX, event.offsetY);
+        }
         mouse.down_x = mouse.x = 0;
         mouse.down_y = mouse.y = 0;
         mouse.hold = false;
@@ -205,10 +310,10 @@ window.onload = function (){
     let color_selc = document.getElementById("color_select");
     let brush_size = document.getElementById("brush_size"); 
     color_selc.addEventListener('change', function () {
-        ctx.strokeStyle = color_selc.value;
+        mouse.color = ctx.strokeStyle = color_selc.value;
     } , false);
     brush_size.addEventListener('change', function () {
-        ctx.lineWidth = brush_size.value;
+        mouse.Brushsize = ctx.lineWidth = brush_size.value;
     }  , false);
 
     // Cursor style
@@ -222,4 +327,4 @@ window.onload = function (){
     }  , false);
 }
 
-// https://www.youtube.com/watch?v=6arkndScw7A
+// https://stackoverflow.com/questions/17150610/undo-redo-for-paint-program-using-canvas
