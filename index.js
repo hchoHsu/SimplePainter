@@ -1,6 +1,8 @@
 /* Main Global Variables */
 var cvs, ctx;
 var execution_array = [];
+var execution_redo  = [];
+var isRedo = false;
 
 var mouse = {
     property: 'pencil',
@@ -15,43 +17,65 @@ var mouse = {
 /* Functions */
 // Redrawing Array Functions
 function createElement(property, cur_x, cur_y){
+    isRedo = false;
+    execution_redo.length = 0;
+
+    let new_elt;
     switch (property){
         case 'pencil':
-            return {
+            new_elt =  {
                 property: 'pencil',
                 position_now: mouse.position_now,
-                position_nxt: [cur_x, cur_y],
+                position_nxt: [cur_x, cur_y],  
                 strokeStyle : ctx.strokeStyle,
-                lineWidth   : ctx.lineWidth
+                lineWidth   : ctx.lineWidth,
+                line_property: 'move'
             }
+            if(!mouse.isHolding)
+                new_elt.line_property = 'End';
+        break;
         case 'eraser':
-            return {
+            new_elt = {
                 property: 'eraser',
                 position_now: mouse.position_now,
                 position_nxt: [cur_x, cur_y],
                 strokeStyle : ctx.strokeStyle,
-                lineWidth   : ctx.lineWidth
+                lineWidth   : ctx.lineWidth,
+                line_property: 'move'
             }
+            if(!mouse.isHolding)
+                new_elt.line_property = 'End';
+        break;
         case 'text':
-            return {
+            new_elt = {
                 property: 'text',
                 position_up: mouse.position_up,
                 font : ctx.font,
                 fillText : cur_x,
+                fillStyle: document.getElementById("color_select").value
             }
+        break;
         case 'image':
-            return {
+            new_elt = {
                 property: 'image',
                 file: cur_x
             }
+        break;
+        case 'refresh':
+            new_elt = {
+                property: 'refresh'
+            }
+        break;
     }
+    return new_elt;
 }
 function canvas_push(property, cur_x, cur_y){
     let new_element = createElement(property, cur_x, cur_y);
     execution_array.push(new_element);
+    console.log("push " + new_element.property);
+
 }
-function canvas_redraw(){
-    // TODO: redraw the whole map
+async function canvas_redraw(){
     let len = execution_array.length;
     if(len < 1) return;
 
@@ -83,20 +107,82 @@ function canvas_redraw(){
                 ctx.font = cur.font;
                 ctx.textBaseline = 'top';
                 ctx.textAlign = 'left';
+                let origin_fillStyle = ctx.fillStyle;
+                ctx.fillStyle = cur.fillStyle;
                 ctx.fillText(cur.fillText, cur.position_up[0] - 4, cur.position_up[1] - 4);
+                ctx.fillStyle = origin_fillStyle;
             break;
             case 'image':
                 // TODO:
                 // The for loop will continue before the image loaded.
                 // Fix the problem here.
                 let img = new Image();
-                img.src = URL.createObjectURL(cur.file);
-                img.onload = function () {
-                    ctx.drawImage(this, 0, 0, cvs.width, cvs.height);
-                };
+                const imageLoadPromise = new Promise(resolve => {
+                    img.src = URL.createObjectURL(cur.file);
+                    img.onload = function () {
+                        ctx.drawImage(this, 0, 0, cvs.width, cvs.height);
+                    };
+                })
+                await imageLoadPromise;
+            break;
+            case 'refresh':
+                ctx.clearRect(0, 0, cvs.width, cvs.height);
             break;
         }
     }
+}
+function canvas_Undo(){
+    let len = execution_array.length;
+    if(len < 1) return;
+
+    isRedo = true;
+    let cur = execution_array[len - 1];
+    execution_redo.push(cur);
+    execution_array.pop();
+    console.log("pop " + cur.property);
+
+    len--;
+    while(len){
+        cur = execution_array[len - 1];
+        if(cur.property != 'pencil' && cur.property != 'eraser') break;
+        if(cur.line_property == 'End') break;
+        console.log("pop " + cur.property);
+        execution_redo.push(cur);
+        execution_array.pop();
+        len--;
+    }
+
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+    canvas_redraw();
+}
+function canvas_Redo(){
+    let len = execution_redo.length;
+    if(len < 1 || !isRedo) return;
+
+    let cur = execution_redo[len - 1];
+    execution_redo.pop();
+    execution_array.push(cur);
+
+    if(cur.property == 'pencil' || cur.property == 'eraser'){
+        len--;
+        while(len){
+            cur = execution_redo[len - 1];
+            if(cur.property != 'pencil' && cur.property != 'eraser') break;
+            if(cur.line_property == 'End'){
+                console.log("pop " + cur.property);
+                execution_array.push(cur);
+                execution_redo.pop();
+                break;
+            }
+            console.log("pop " + cur.property);
+            execution_array.push(cur);
+            execution_redo.pop();
+            len--;
+        }
+    }
+
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+    canvas_redraw();
 }
 // drawer
 function drawLine(cur_x, cur_y){
@@ -112,11 +198,17 @@ function drawLine(cur_x, cur_y){
     canvas_push(mouse.property, cur_x, cur_y);
 }
 function drawText(txt, fontSize, fontFamily){
+    if(txt == '')   return;
+
     ctx.font = fontSize + ' ' + fontFamily;
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';
-    ctx.fillText(txt, mouse.position_up[0] - 4, mouse.position_up[1] - 4);
 
+    let origin_fillStyle = ctx.fillStyle;
+    ctx.fillStyle = document.getElementById("color_select").value;
+    ctx.fillText(txt, mouse.position_up[0] - 4, mouse.position_up[1] - 4);
+    ctx.fillStyle = origin_fillStyle;
+    
     canvas_push('text', txt, 0);
 }
 function enterPress (event){
@@ -207,8 +299,8 @@ function mouseDown(event){
 function mouseMove(event){
     if(!mouse.isHolding || mouse.isTyping) return;
 
-    ctx.clearRect(0, 0, cvs.width, cvs.height);
-    canvas_redraw();
+    // ctx.clearRect(0, 0, cvs.width, cvs.height);
+    // canvas_redraw();
 
     // before(position_now) & now(event.offset)
     callMouseFunction(event.offsetX, event.offsetY);
@@ -217,8 +309,8 @@ function mouseMove(event){
 function mouseUp(event){
     if(!mouse.isHolding || mouse.isTyping) return;
 
-    ctx.clearRect(0, 0, cvs.width, cvs.height);
-    canvas_redraw();
+    // ctx.clearRect(0, 0, cvs.width, cvs.height);
+    // canvas_redraw();
 
     mouse.isHolding = false;
     mouse.position_up = [event.offsetX, event.offsetY];
@@ -255,8 +347,19 @@ window.onload = function ()
 
     // Refresh
     let refresh = document.getElementById("refresh");
+    let undoBtn = document.getElementById("Undo");
+    let redoBtn = document.getElementById("Redo");
     refresh.addEventListener('click', function () {
-        if (confirm('Are you sure you want to refresh'))
+        if (confirm('Are you sure you want to refresh')){
             ctx.clearRect(0, 0, cvs.width, cvs.height);
+            document.getElementById("Upload").value = '';
+            canvas_push('refresh', 0, 0);
+        }
+    }  , false);
+    undoBtn.addEventListener('click', function () {
+        canvas_Undo();
+    }  , false);
+    redoBtn.addEventListener('click', function () {
+        canvas_Redo();
     }  , false);
 }
