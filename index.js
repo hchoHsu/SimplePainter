@@ -352,8 +352,8 @@ function upload_img(input){
 }
 function download_img(){
     let link = document.getElementById("download_link");
-    link.download = "img.jpg";
-    link.href = cvs.toDataURL("image/jpeg");
+    link.download = "img.png";
+    link.href = cvs.toDataURL("image/png");
     link.click();
 }
 // selector
@@ -385,6 +385,7 @@ function changeMouse (property){
         case 'triangle':
             mouse.property = "triangle";
             cvs.style.cursor = "url('img/triangle.cur'), auto";
+            console.log(cvs.style.cursor);
         break;
     }
     // console.log("mouse's property: " + mouse.property);
