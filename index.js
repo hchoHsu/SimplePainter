@@ -66,13 +66,21 @@ function createElement(property, cur_x, cur_y){
                 property: 'refresh'
             }
         break;
+        case 'circle':
+            new_elt = {
+                property: 'circle',
+                position_center: cur_x,
+                radius: cur_y,
+                strokeStyle: document.getElementById("color_select").value
+            }
+        break;
     }
     return new_elt;
 }
 function canvas_push(property, cur_x, cur_y){
     let new_element = createElement(property, cur_x, cur_y);
     execution_array.push(new_element);
-    console.log("push " + new_element.property);
+    // console.log("push " + new_element.property);
 
 }
 async function canvas_redraw(){
@@ -126,7 +134,15 @@ async function canvas_redraw(){
                 await imageLoadPromise;
             break;
             case 'refresh':
+                console.log('refresh');
                 ctx.clearRect(0, 0, cvs.width, cvs.height);
+            break;
+            case 'circle':
+                ctx.strokeStyle = cur.strokeStyle;
+                ctx.beginPath();
+                ctx.arc(cur.position_center[0], cur.position_center[1], cur.radius, 0, 2 * Math.PI, true);
+                ctx.stroke();
+                ctx.closePath();
             break;
         }
     }
@@ -169,12 +185,12 @@ function canvas_Redo(){
             cur = execution_redo[len - 1];
             if(cur.property != 'pencil' && cur.property != 'eraser') break;
             if(cur.line_property == 'End'){
-                console.log("pop " + cur.property);
+                // console.log("pop " + cur.property);
                 execution_array.push(cur);
                 execution_redo.pop();
                 break;
             }
-            console.log("pop " + cur.property);
+            // console.log("pop " + cur.property);
             execution_array.push(cur);
             execution_redo.pop();
             len--;
@@ -196,6 +212,20 @@ function drawLine(cur_x, cur_y){
     ctx.closePath();
 
     canvas_push(mouse.property, cur_x, cur_y);
+}
+function drawCircle(cur_x, cur_y){
+    ctx.strokeStyle = document.getElementById("color_select").value;
+    
+    ctx.beginPath();
+    let center = [(mouse.position_down[0] + cur_x) / 2, (mouse.position_down[1] + cur_y) / 2,];
+    let a = mouse.position_down[0] - cur_x;
+    let b = mouse.position_down[1] - cur_y;
+    let radius = Math.sqrt(a*a + b*b) / 2;
+    ctx.arc(center[0], center[1], radius, 0, Math.PI * 2, true);
+    ctx.stroke();
+    ctx.closePath();
+
+    canvas_push(mouse.property, center, radius);
 }
 function drawText(txt, fontSize, fontFamily){
     if(txt == '')   return;
@@ -269,6 +299,10 @@ function changeMouse (property){
             mouse.property = "text";
             cvs.style.cursor = "text"
         break;
+        case 'circle':
+            mouse.property = "circle";
+            // cvs.style.cursor = "url(/* new cursor file */), auto";
+        break;
     }
     console.log("mouse's property: " + mouse.property);
 }
@@ -285,6 +319,9 @@ function callMouseFunction (cur_x, cur_y){
         case 'text':
             // Will be called after the mouse is released
             if(!mouse.isHolding && !mouse.isTyping) addInput(cur_x, cur_y);
+        break;
+        case 'circle':
+            drawCircle(cur_x, cur_y);
         break;
     }
 }
@@ -303,6 +340,11 @@ function mouseMove(event){
     // canvas_redraw();
 
     // before(position_now) & now(event.offset)
+    if(mouse.property == 'circle'){
+        let len = execution_array.length
+        if(len > 1 && execution_array[len - 1].property == mouse.property);
+        canvas_Undo();
+    }
     callMouseFunction(event.offsetX, event.offsetY);
     mouse.position_now = [event.offsetX, event.offsetY];
 }
@@ -315,6 +357,9 @@ function mouseUp(event){
     mouse.isHolding = false;
     mouse.position_up = [event.offsetX, event.offsetY];
     // before(position_now) & now(event.offset)
+    // if(mouse.property == 'circle')
+    //     canvas_Undo();
+
     if(mouse.property == "text")
         callMouseFunction(event.clientX, event.clientY);
     else
@@ -338,6 +383,8 @@ window.onload = function ()
         changeMouse('eraser')}  , false);
     document.getElementById("textInput").addEventListener('click', function () {
         changeMouse('text')}    , false);
+    document.getElementById("circle").addEventListener('click', function () {
+        changeMouse('circle')}  , false);
     
     // Image Up/Down load
     document.getElementById("Upload").addEventListener('change', function () {
