@@ -11,6 +11,7 @@ var mouse = {
     position_up:   [0, 0],
 
     isHolding: false,
+    isMoving : false,
     isTyping : false
 }
 
@@ -52,18 +53,21 @@ function createElement(property, cur_x, cur_y){
                 position_up: mouse.position_up,
                 font : ctx.font,
                 fillText : cur_x,
-                fillStyle: document.getElementById("color_select").value
+                fillStyle: document.getElementById("color_select").value,
+                line_property: 'End'
             }
         break;
         case 'image':
             new_elt = {
                 property: 'image',
-                file: cur_x
+                file: cur_x,
+                line_property: 'End'
             }
         break;
         case 'refresh':
             new_elt = {
-                property: 'refresh'
+                property: 'refresh',
+                line_property: 'End'
             }
         break;
         case 'circle':
@@ -71,8 +75,37 @@ function createElement(property, cur_x, cur_y){
                 property: 'circle',
                 position_center: cur_x,
                 radius: cur_y,
-                strokeStyle: document.getElementById("color_select").value
+                strokeStyle: ctx.strokeStyle,
+                lineWidth  : ctx.lineWidth,
+                line_property: 'move'
             }
+            if(!mouse.isHolding)
+                new_elt.line_property = 'End';
+        break;
+        case 'rectangle':
+            new_elt = {
+                property: 'rectangle',
+                position_UpRight: mouse.position_down,
+                width: cur_x,
+                height: cur_y,
+                strokeStyle: ctx.strokeStyle,
+                lineWidth  : ctx.lineWidth,
+                line_property: 'move'
+            }
+            if(!mouse.isHolding)
+                new_elt.line_property = 'End';
+        break;
+        case 'triangle':
+            new_elt = {
+                property: 'triangle',
+                position_now: mouse.position_down,
+                position_nxt: [cur_x, cur_y],
+                strokeStyle : ctx.strokeStyle,
+                lineWidth   : ctx.lineWidth,
+                line_property: 'move'
+            }
+            if(!mouse.isHolding)
+                new_elt.line_property = 'End';
         break;
     }
     return new_elt;
@@ -81,7 +114,6 @@ function canvas_push(property, cur_x, cur_y){
     let new_element = createElement(property, cur_x, cur_y);
     execution_array.push(new_element);
     // console.log("push " + new_element.property);
-
 }
 async function canvas_redraw(){
     let len = execution_array.length;
@@ -134,13 +166,30 @@ async function canvas_redraw(){
                 await imageLoadPromise;
             break;
             case 'refresh':
-                console.log('refresh');
                 ctx.clearRect(0, 0, cvs.width, cvs.height);
             break;
             case 'circle':
                 ctx.strokeStyle = cur.strokeStyle;
+                ctx.lineWidth   = cur.lineWidth;
                 ctx.beginPath();
                 ctx.arc(cur.position_center[0], cur.position_center[1], cur.radius, 0, 2 * Math.PI, true);
+                ctx.stroke();
+                ctx.closePath();
+            break;
+            case 'rectangle':
+                ctx.strokeStyle = cur.strokeStyle;
+                ctx.lineWidth   = cur.lineWidth;
+                ctx.strokeRect(cur.position_UpRight[0], cur.position_UpRight[1], cur.width, cur.height);
+            break;
+            case 'triangle':
+                ctx.strokeStyle = cur.strokeStyle;
+                ctx.lineWidth   = cur.lineWidth;
+
+                ctx.beginPath();
+                ctx.moveTo(cur.position_nxt[0], cur.position_nxt[1]);
+                ctx.lineTo(cur.position_now[0], cur.position_nxt[1]);
+                ctx.lineTo((cur.position_nxt[0] + cur.position_now[0]) / 2, cur.position_now[1]);
+                ctx.lineTo(cur.position_nxt[0], cur.position_nxt[1]);
                 ctx.stroke();
                 ctx.closePath();
             break;
@@ -155,14 +204,14 @@ function canvas_Undo(){
     let cur = execution_array[len - 1];
     execution_redo.push(cur);
     execution_array.pop();
-    console.log("pop " + cur.property);
+    // console.log("pop " + cur.property);
 
     len--;
     while(len){
         cur = execution_array[len - 1];
-        if(cur.property != 'pencil' && cur.property != 'eraser') break;
+        if(cur.property == 'text' || cur.property == 'refresh' || cur.property == 'image') break;
         if(cur.line_property == 'End') break;
-        console.log("pop " + cur.property);
+        // console.log("pop " + cur.property);
         execution_redo.push(cur);
         execution_array.pop();
         len--;
@@ -215,6 +264,7 @@ function drawLine(cur_x, cur_y){
 }
 function drawCircle(cur_x, cur_y){
     ctx.strokeStyle = document.getElementById("color_select").value;
+    ctx.lineWidth   = document.getElementById("brush_size").value;
     
     ctx.beginPath();
     let center = [(mouse.position_down[0] + cur_x) / 2, (mouse.position_down[1] + cur_y) / 2,];
@@ -226,6 +276,31 @@ function drawCircle(cur_x, cur_y){
     ctx.closePath();
 
     canvas_push(mouse.property, center, radius);
+}
+function drawRect(cur_x, cur_y){
+    ctx.strokeStyle = document.getElementById("color_select").value;
+    ctx.lineWidth   = document.getElementById("brush_size").value;
+    
+    let width  = cur_x - mouse.position_down[0];
+    let height = cur_y - mouse.position_down[1];
+
+    ctx.strokeRect(mouse.position_down[0], mouse.position_down[1], width, height);
+
+    canvas_push(mouse.property, width, height);
+}
+function drawTri(cur_x, cur_y){
+    ctx.strokeStyle = document.getElementById("color_select").value;
+    ctx.lineWidth   = document.getElementById("brush_size").value;
+
+    ctx.beginPath();
+    ctx.moveTo(cur_x, cur_y);
+    ctx.lineTo(mouse.position_down[0], cur_y);
+    ctx.lineTo((mouse.position_down[0] + cur_x) / 2, mouse.position_down[1]);
+    ctx.lineTo(cur_x, cur_y);
+    ctx.stroke();
+    ctx.closePath();
+
+    canvas_push(mouse.property, cur_x, cur_y);
 }
 function drawText(txt, fontSize, fontFamily){
     if(txt == '')   return;
@@ -301,10 +376,18 @@ function changeMouse (property){
         break;
         case 'circle':
             mouse.property = "circle";
-            // cvs.style.cursor = "url(/* new cursor file */), auto";
+            cvs.style.cursor = "url('img/circle.cur'), auto";
+        break;
+        case 'rectangle':
+            mouse.property = "rectangle";
+            cvs.style.cursor = "url('img/rectangle.cur'), auto";
+        break;
+        case 'triangle':
+            mouse.property = "triangle";
+            cvs.style.cursor = "url('img/triangle.cur'), auto";
         break;
     }
-    console.log("mouse's property: " + mouse.property);
+    // console.log("mouse's property: " + mouse.property);
 }
 function callMouseFunction (cur_x, cur_y){
     switch (mouse.property){
@@ -323,6 +406,12 @@ function callMouseFunction (cur_x, cur_y){
         case 'circle':
             drawCircle(cur_x, cur_y);
         break;
+        case 'rectangle':
+            drawRect(cur_x, cur_y);
+        break;
+        case 'triangle':
+            drawTri(cur_x, cur_y);
+        break;
     }
 }
 // mouse action
@@ -336,34 +425,38 @@ function mouseDown(event){
 function mouseMove(event){
     if(!mouse.isHolding || mouse.isTyping) return;
 
-    // ctx.clearRect(0, 0, cvs.width, cvs.height);
-    // canvas_redraw();
-
-    // before(position_now) & now(event.offset)
-    if(mouse.property == 'circle'){
-        let len = execution_array.length
-        if(len > 1 && execution_array[len - 1].property == mouse.property);
-        canvas_Undo();
+    if(mouse.property == 'circle' || mouse.property == 'rectangle' || mouse.property == 'triangle'){
+        if(execution_array.length > 0){
+            if(execution_array[execution_array.length - 1].property == mouse.property){
+                if(execution_array[execution_array.length - 1].line_property != 'End')
+                    canvas_Undo();
+            }
+        }
     }
     callMouseFunction(event.offsetX, event.offsetY);
     mouse.position_now = [event.offsetX, event.offsetY];
 }
 function mouseUp(event){
+    // console.log("mouse up");
     if(!mouse.isHolding || mouse.isTyping) return;
-
-    // ctx.clearRect(0, 0, cvs.width, cvs.height);
-    // canvas_redraw();
 
     mouse.isHolding = false;
     mouse.position_up = [event.offsetX, event.offsetY];
     // before(position_now) & now(event.offset)
-    // if(mouse.property == 'circle')
-    //     canvas_Undo();
+    if(mouse.property == 'circle' || mouse.property == 'rectangle' || mouse.property == 'triangle'){
+        if(execution_array.length > 0){
+            if(execution_array[execution_array.length - 1].property == mouse.property){
+                if(execution_array[execution_array.length - 1].line_property != 'End')
+                    canvas_Undo();
+            }
+        }
+    }
 
     if(mouse.property == "text")
         callMouseFunction(event.clientX, event.clientY);
     else
         callMouseFunction(event.offsetX, event.offsetY);
+    // console.log(execution_array[execution_array.length - 1]);
 }
 
 window.onload = function ()
@@ -385,6 +478,10 @@ window.onload = function ()
         changeMouse('text')}    , false);
     document.getElementById("circle").addEventListener('click', function () {
         changeMouse('circle')}  , false);
+    document.getElementById("rectangle").addEventListener('click', function () {
+        changeMouse('rectangle')}  , false);
+    document.getElementById("triangle").addEventListener('click', function () {
+        changeMouse('triangle')}  , false);
     
     // Image Up/Down load
     document.getElementById("Upload").addEventListener('change', function () {
