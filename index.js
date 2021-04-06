@@ -115,7 +115,7 @@ function canvas_push(property, cur_x, cur_y){
     execution_array.push(new_element);
     // console.log("push " + new_element.property);
 }
-async function canvas_redraw(){
+function canvas_redraw(){
     let len = execution_array.length;
     if(len < 1) return;
 
@@ -153,17 +153,7 @@ async function canvas_redraw(){
                 ctx.fillStyle = origin_fillStyle;
             break;
             case 'image':
-                // TODO:
-                // The for loop will continue before the image loaded.
-                // Fix the problem here.
-                let img = new Image();
-                const imageLoadPromise = new Promise(resolve => {
-                    img.src = URL.createObjectURL(cur.file);
-                    img.onload = function () {
-                        ctx.drawImage(this, 0, 0, cvs.width, cvs.height);
-                    };
-                })
-                await imageLoadPromise;
+                ctx.drawImage(cur.file, 0, 0, cvs.width, cvs.height);
             break;
             case 'refresh':
                 ctx.clearRect(0, 0, cvs.width, cvs.height);
@@ -348,7 +338,7 @@ function upload_img(input){
         ctx.drawImage(this, 0, 0, cvs.width, cvs.height);
     };
     
-    canvas_push('image', file, 0);
+    canvas_push('image', img, 0);
 }
 function download_img(){
     let link = document.getElementById("download_link");
