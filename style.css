@@ -1,3 +1,44 @@
+body {
+    background-color: black;
+}
+
+.ToolBar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 160px;
+    height: 100%;
+    background-color:darkgray;
+    z-index: 1;
+    overflow-x: hidden;
+    padding-top: 20px;
+    padding-left: 20px;
+}
+.canvas {
+    padding-top: 1%;
+    margin-left: 50px;
+    width: 100%;
+    text-align:center;
+    display: inline-block;
+}
+
+.icon {
+    background-color: white;
+    color: black;
+    padding: 12px 16px;
+    border: 1px solid;
+    display: inline-block;;
+}
+.icon:hover {
+    background-color: #DCDCDC;
+    color: white;
+}
+
 #canvas {
+    display: block;
+    /* margin-left: auto; */
+    /* margin-right: auto; */
+    margin: auto;
+    background-color: white;
     cursor: url('img/pencil.cur'), auto;
 }
