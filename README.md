@@ -129,7 +129,7 @@
 
 ### Gitlab page link
 
-    your web page URL, which should be "https://[studentID].gitlab.io/AS_01_WebCanvas"
+    https://108062109.gitlab.io/AS_01_WebCanvas
 
 <style>
 table th{
