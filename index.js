@@ -107,6 +107,18 @@ function createElement(property, cur_x, cur_y){
             if(!mouse.isHolding)
                 new_elt.line_property = 'End';
         break;
+        case 'line':
+            new_elt = {
+                property: 'line',
+                position_now: mouse.position_down,
+                position_nxt: [cur_x, cur_y],
+                strokeStyle : ctx.strokeStyle,
+                lineWidth   : ctx.lineWidth,
+                line_property: 'move'
+            }
+            if(!mouse.isHolding)
+                new_elt.line_property = 'End';
+        break;
     }
     return new_elt;
 }
@@ -183,6 +195,16 @@ function canvas_redraw(){
                 ctx.stroke();
                 ctx.closePath();
             break;
+            case 'line':
+                ctx.strokeStyle = cur.strokeStyle;
+                ctx.lineWidth   = cur.lineWidth;
+
+                ctx.beginPath();
+                ctx.moveTo(cur.position_now[0], cur.position_now[1]);
+                ctx.lineTo(cur.position_nxt[0], cur.position_nxt[1]);
+                ctx.stroke();
+                ctx.closePath();
+            break;
         }
     }
 }
@@ -246,6 +268,18 @@ function drawLine(cur_x, cur_y){
     
     ctx.beginPath();
     ctx.moveTo(mouse.position_now[0], mouse.position_now[1]);
+    ctx.lineTo(cur_x, cur_y);
+    ctx.stroke();
+    ctx.closePath();
+
+    canvas_push(mouse.property, cur_x, cur_y);
+}
+function drawSingleLine(cur_x, cur_y){
+    ctx.strokeStyle = document.getElementById("color_select").value;
+    ctx.lineWidth   = document.getElementById("brush_size").value;
+    
+    ctx.beginPath();
+    ctx.moveTo(mouse.position_down[0], mouse.position_down[1]);
     ctx.lineTo(cur_x, cur_y);
     ctx.stroke();
     ctx.closePath();
@@ -375,7 +409,10 @@ function changeMouse (property){
         case 'triangle':
             mouse.property = "triangle";
             cvs.style.cursor = "url('img/triangle.cur'), auto";
-            console.log(cvs.style.cursor);
+        break;
+        case 'line':
+            mouse.property = "line";
+            cvs.style.cursor = "crosshair";
         break;
     }
     // console.log("mouse's property: " + mouse.property);
@@ -403,6 +440,8 @@ function callMouseFunction (cur_x, cur_y){
         case 'triangle':
             drawTri(cur_x, cur_y);
         break;
+        case 'line':
+            drawSingleLine(cur_x, cur_y);
     }
 }
 // mouse action
@@ -416,7 +455,7 @@ function mouseDown(event){
 function mouseMove(event){
     if(!mouse.isHolding || mouse.isTyping) return;
 
-    if(mouse.property == 'circle' || mouse.property == 'rectangle' || mouse.property == 'triangle'){
+    if(mouse.property == 'circle' || mouse.property == 'rectangle' || mouse.property == 'triangle' || mouse.property == 'line'){
         if(execution_array.length > 0){
             if(execution_array[execution_array.length - 1].property == mouse.property){
                 if(execution_array[execution_array.length - 1].line_property != 'End')
@@ -434,7 +473,7 @@ function mouseUp(event){
     mouse.isHolding = false;
     mouse.position_up = [event.offsetX, event.offsetY];
     // before(position_now) & now(event.offset)
-    if(mouse.property == 'circle' || mouse.property == 'rectangle' || mouse.property == 'triangle'){
+    if(mouse.property == 'circle' || mouse.property == 'rectangle' || mouse.property == 'triangle' || mouse.property == 'line'){
         if(execution_array.length > 0){
             if(execution_array[execution_array.length - 1].property == mouse.property){
                 if(execution_array[execution_array.length - 1].line_property != 'End')
@@ -473,6 +512,8 @@ window.onload = function ()
         changeMouse('rectangle')}  , false);
     document.getElementById("triangle").addEventListener('click', function () {
         changeMouse('triangle')}  , false);
+    document.getElementById("line").addEventListener('click', function () {
+        changeMouse('line')}      , false);
     
     // Image Up/Down load
     document.getElementById("Upload").addEventListener('change', function () {

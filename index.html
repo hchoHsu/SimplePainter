@@ -12,51 +12,55 @@
     <div class="ToolBar">
         <h2>ToolBar</h2>
         <!--Color and Size-->
+        <label>Brush Size</label>
+        <input type="range" min="1" max="50" value="1" id="brush_size">
+
         <label>Color Select</label>
         <input type="color" value="#000000" id="color_select">
         
-        <label>Brush Size</label>
-        <input type="range" min="1" max="40" value="1" id="brush_size">
-        
         <!--Text Element-->
-        <label>Fontsize</label>
-        <input type="number" min="2" max="100" value="12" id="fontsize">
-        
-        <select id="fontType">
-            <option value="sans-serif">sans-serif</option>
-            <option value="serif"     >serif</option>
-            <option value="monospace" >monospace</option>
-            <option value="cursive"   >cursive</option>
-            <option value="fantasy"   >fantasy</option>
-        </select>
+        <br><br>
+        <label>
+            FontStyle:
+            <select id="fontType">
+                <option value="sans-serif">sans-serif</option>
+                <option value="serif"     >serif</option>
+                <option value="monospace" >monospace</option>
+                <option value="cursive"   >cursive</option>
+                <option value="fantasy"   >fantasy</option>
+            </select>
+        </label>
+        <label>
+            FontSize :
+            <input type="number" min="2" max="100" value="12" id="fontsize">
+        </label>
         <br>
         <br>
         <!--Tool bar-->
-        <button class="icon" id="pencil"><img src='img/icons8-pencil-24.png'></button>
-        <button class="icon" id="eraser"><img src='img/icons8-eraser-24.png'></button>
-        <button class="icon" id="textInput"><img src='img/icons8-text-color-24.png'></button>
+        <button class="icon" id="pencil" title="pencil"><img src='img/icons8-pencil-24.png'></button>
+        <button class="icon" id="eraser" title="eraser"><img src='img/icons8-eraser-24.png'></button>
+        <button class="icon" id="textInput" title="text"><img src='img/icons8-text-color-24.png'></button>
 
-        <br> 
-        <button class="icon" id="rectangle"><img src='img/icons8-rectangular-24.png'></button>
-        <button class="icon" id="circle"><img src='img/icons8-circle-16.png'></button>
-        <button class="icon" id="triangle"><img src='img/icons8-triangle-24.png'></button>
+        <br>
+        <br>
+        <button class="icon" id="rectangle" title="rectangle"><img src='img/icons8-rectangular-24.png'></button>
+        <button class="icon" id="circle" title="circle"><img src='img/icons8-circle-16.png'></button>
+        <button class="icon" id="triangle" title="triangle"><img src='img/icons8-triangle-24.png'></button>
+        <button class="icon" id="line" title="line"><img src='img/icons8-line-24.png'></img></button>
         <!--function tool-->
         <br>
         <br>
-        <button class="icon" id="Undo"><img src='img/icons8-undo-26.png' /></button>
-        <button class="icon" id="Redo"><img src='img/icons8-redo-26.png' /></button>
+        <button class="icon" id="Undo" title="Undo"><img src='img/icons8-undo-26.png' /></button>
+        <button class="icon" id="Redo" title="Redo"><img src='img/icons8-redo-26.png' /></button>
         <!--Image Up/Down load-->
-        
-        <br>
-        <br>
-        <label class="icon" for="Upload">
-            <img  src='img/icons8-upload-26.png'></img>
+        <label class="icon" for="Upload" title="Upload">
+            <img src='img/icons8-upload-26.png'></img>
         </label>
-        <button class="icon" id="download"><img src='img/icons8-download-26.png'></button>
+        <button class="icon" id="download" title="Download"><img src='img/icons8-download-26.png'></button>
         <a id="download_link"></a>
         <input type="file" id="Upload" style="display: none">
         <br><br>
-        <button class="icon" id="refresh"><img src='img/icons8-refresh-24.png' /></button>
+        <button class="icon" id="refresh" title="Refresh"><img src='img/icons8-refresh-24.png' /></button>
     </div>
     <!--Canvas-->
     <div class="canvas">
